@@ -340,7 +340,7 @@ class WeaviateDataStore(DataStore):
                 operand = {
                     "path": [
                         attr
-                        if not (attr == "start_date" or attr == "end_date")
+                        if attr not in ["start_date", "end_date"]
                         else "created_at"
                     ],
                     "operator": filter_condition["operator"],
@@ -364,9 +364,6 @@ class WeaviateDataStore(DataStore):
 
         try:
             result = uuid.UUID(candidate_id)
-            if result.version not in acceptable_version:
-                return False
-            else:
-                return True
+            return result.version in acceptable_version
         except ValueError:
             return False

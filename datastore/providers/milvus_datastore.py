@@ -26,12 +26,12 @@ from models.models import (
     DocumentChunkWithScore,
 )
 
-MILVUS_COLLECTION = os.environ.get("MILVUS_COLLECTION") or "c" + uuid4().hex
+MILVUS_COLLECTION = os.environ.get("MILVUS_COLLECTION") or f"c{uuid4().hex}"
 MILVUS_HOST = os.environ.get("MILVUS_HOST") or "localhost"
 MILVUS_PORT = os.environ.get("MILVUS_PORT") or 19530
 MILVUS_USER = os.environ.get("MILVUS_USER")
 MILVUS_PASSWORD = os.environ.get("MILVUS_PASSWORD")
-MILVUS_USE_SECURITY = False if MILVUS_PASSWORD is None else True
+MILVUS_USE_SECURITY = MILVUS_PASSWORD is not None
 
 UPSERT_BATCH_SIZE = 100
 OUTPUT_DIM = 1536
@@ -262,7 +262,7 @@ class MilvusDataStore(DataStore):
                 try:
                     print(f"Upserting batch of size {len(batch[0])}")
                     self.col.insert(batch)
-                    print(f"Upserted batch successfully")
+                    print("Upserted batch successfully")
                 except Exception as e:
                     print(f"Error upserting batch: {e}")
                     raise e
@@ -407,17 +407,17 @@ class MilvusDataStore(DataStore):
         if ids != None:
             if len(ids) != 0:
                 # Add quotation marks around the string format id
-                ids = ['"' + str(id) + '"' for id in ids]
+                ids = [f'"{str(id)}"' for id in ids]
                 # Query for the pk's of entries that match id's
                 ids = self.col.query(f"document_id in [{','.join(ids)}]")
                 # Convert to list of pks
                 ids = [str(entry["pk"]) for entry in ids]  # type: ignore
-                # Check to see if there are valid pk's to delete
-                if len(ids) != 0:
-                    # Delete the entries for each pk
-                    res = self.col.delete(f"pk in [{','.join(ids)}]")
-                    # Incremet our deleted count
-                    delete_count += int(res.delete_count)  # type: ignore
+            # Check to see if there are valid pk's to delete
+            if len(ids) != 0:
+                # Delete the entries for each pk
+                res = self.col.delete(f"pk in [{','.join(ids)}]")
+                # Incremet our deleted count
+                delete_count += int(res.delete_count)  # type: ignore
 
         # Check if empty filter
         if filter != None:
@@ -429,12 +429,12 @@ class MilvusDataStore(DataStore):
                 filter = self.col.query(filter)  # type: ignore
                 # Convert to list of pks
                 filter = [str(entry["pk"]) for entry in filter]  # type: ignore
-                # Check to see if there are valid pk's to delete
-                if len(filter) != 0:  # type: ignore
-                    # Delete the entries
-                    res = self.col.delete(f"pk in [{','.join(filter)}]")  # type: ignore
-                    # Increment our delete count
-                    delete_count += int(res.delete_count)  # type: ignore
+            # Check to see if there are valid pk's to delete
+            if len(filter) != 0:  # type: ignore
+                # Delete the entries
+                res = self.col.delete(f"pk in [{','.join(filter)}]")  # type: ignore
+                # Increment our delete count
+                delete_count += int(res.delete_count)  # type: ignore
 
         # This setting perfoms flushes after delete. Small delete == bad to use
         # self.col.flush()
@@ -457,18 +457,13 @@ class MilvusDataStore(DataStore):
             if value is not None:
                 # Convert start_date to int and add greater than or equal logic
                 if field == "start_date":
-                    filters.append(
-                        "(created_at >= " + str(to_unix_timestamp(value)) + ")"
-                    )
-                # Convert end_date to int and add less than or equal logic
+                    filters.append(f"(created_at >= {str(to_unix_timestamp(value))})")
                 elif field == "end_date":
                     filters.append(
                         "(created_at <= " + str(to_unix_timestamp(value)) + ")"
                     )
-                # Convert Source to its string value and check equivalency
                 elif field == "source":
                     filters.append("(" + field + ' == "' + str(value.value) + '")')
-                # Check equivalency of rest of string fields
                 else:
                     filters.append("(" + field + ' == "' + str(value) + '")')
         # Join all our expressions with `and``

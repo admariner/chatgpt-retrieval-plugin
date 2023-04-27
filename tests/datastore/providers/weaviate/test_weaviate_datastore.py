@@ -48,8 +48,6 @@ def test_db(weaviate_client, documents):
 
 @pytest.fixture
 def documents():
-    documents = []
-
     authors = ["Max Mustermann", "John Doe", "Jane Doe"]
     texts = [
         "lorem ipsum dolor sit amet",
@@ -64,21 +62,20 @@ def documents():
         "2021-01-21T10:00:00-02:00",
     ]
 
-    for i in range(3):
-        documents.append(
-            {
-                "id": ids[i],
-                "text": texts[i],
-                "metadata": {
-                    "source": sources[i],
-                    "source_id": "5325",
-                    "url": "http://example.com",
-                    "created_at": created_at[i],
-                    "author": authors[i],
-                },
-            }
-        )
-
+    documents = [
+        {
+            "id": ids[i],
+            "text": texts[i],
+            "metadata": {
+                "source": sources[i],
+                "source_id": "5325",
+                "url": "http://example.com",
+                "created_at": created_at[i],
+                "author": authors[i],
+            },
+        }
+        for i in range(3)
+    ]
     no_metadata_doc = {
         "id": "jkl_012",
         "text": "no metadata",
