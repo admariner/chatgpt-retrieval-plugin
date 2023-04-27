@@ -53,9 +53,7 @@ async def process_file_dump(
 
                 # screen for pii if requested
                 if screen_for_pii:
-                    pii_detected = screen_text_for_pii(extracted_text)
-                    # if pii detected, print a warning and skip the document
-                    if pii_detected:
+                    if pii_detected := screen_text_for_pii(extracted_text):
                         print("PII detected in document, skipping")
                         skipped_files.append(
                             filepath
@@ -87,7 +85,7 @@ async def process_file_dump(
     # us to add more descriptive logging
     for i in range(0, len(documents), DOCUMENT_UPSERT_BATCH_SIZE):
         # Get the text of the chunks in the current batch
-        batch_documents = [doc for doc in documents[i : i + DOCUMENT_UPSERT_BATCH_SIZE]]
+        batch_documents = list(documents[i : i + DOCUMENT_UPSERT_BATCH_SIZE])
         print(f"Upserting batch of {len(batch_documents)} documents, batch {i}")
         print("documents: ", documents)
         await datastore.upsert(batch_documents)

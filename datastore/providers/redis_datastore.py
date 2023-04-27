@@ -343,25 +343,23 @@ class RedisDataStore(DataStore):
         # Delete all vectors from the index if delete_all is True
         if delete_all:
             try:
-                logging.info(f"Deleting all documents from index")
+                logging.info("Deleting all documents from index")
                 await self.client.ft(REDIS_INDEX_NAME).dropindex(True)
-                logging.info(f"Deleted all documents successfully")
+                logging.info("Deleted all documents successfully")
                 return True
             except Exception as e:
                 logging.info(f"Error deleting all documents: {e}")
                 raise e
 
         # Delete by filter
-        if filter:
-            # TODO - extend this to work with other metadata filters?
-            if filter.document_id:
-                try:
-                    keys = await self._find_keys(f"{REDIS_DOC_PREFIX}:{filter.document_id}:*")
-                    await self._redis_delete(keys)
-                    logging.info(f"Deleted document {filter.document_id} successfully")
-                except Exception as e:
-                    logging.info(f"Error deleting document {filter.document_id}: {e}")
-                    raise e
+        if filter and filter.document_id:
+            try:
+                keys = await self._find_keys(f"{REDIS_DOC_PREFIX}:{filter.document_id}:*")
+                await self._redis_delete(keys)
+                logging.info(f"Deleted document {filter.document_id} successfully")
+            except Exception as e:
+                logging.info(f"Error deleting document {filter.document_id}: {e}")
+                raise e
 
         # Delete by explicit ids (Redis keys)
         if ids:

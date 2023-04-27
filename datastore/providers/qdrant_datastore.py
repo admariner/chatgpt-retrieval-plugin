@@ -125,7 +125,7 @@ class QdrantDataStore(DataStore):
             collection_name=self.collection_name,
             points_selector=points_selector,  # type: ignore
         )
-        return "COMPLETED" == response.status
+        return response.status == "COMPLETED"
 
     def _convert_document_chunk_to_point(
         self, document_chunk: DocumentChunk
@@ -174,14 +174,13 @@ class QdrantDataStore(DataStore):
 
         # Filtering by document ids
         if ids and len(ids) > 0:
-            for document_id in ids:
-                should_conditions.append(
-                    rest.FieldCondition(
-                        key="metadata.document_id",
-                        match=rest.MatchValue(value=document_id),
-                    )
+            should_conditions.extend(
+                rest.FieldCondition(
+                    key="metadata.document_id",
+                    match=rest.MatchValue(value=document_id),
                 )
-
+                for document_id in ids
+            )
         # Equality filters for the payload attributes
         if metadata_filter:
             meta_attributes_keys = {
@@ -222,7 +221,7 @@ class QdrantDataStore(DataStore):
                     )
                 )
 
-        if 0 == len(must_conditions) and 0 == len(should_conditions):
+        if len(must_conditions) == 0 == len(should_conditions):
             return None
 
         return rest.Filter(must=must_conditions, should=should_conditions)

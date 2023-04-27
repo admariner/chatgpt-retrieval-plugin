@@ -13,12 +13,10 @@ from models.models import Document, DocumentMetadata
 
 async def get_document_from_file(file: UploadFile) -> Document:
     extracted_text = await extract_text_from_form_file(file)
-    print(f"extracted_text:")
+    print("extracted_text:")
     # get metadata
     metadata = DocumentMetadata()
-    doc = Document(text=extracted_text, metadata=metadata)
-
-    return doc
+    return Document(text=extracted_text, metadata=metadata)
 
 
 def extract_text_from_filepath(filepath: str, mimetype: Optional[str] = None) -> str:
@@ -36,19 +34,15 @@ def extract_text_from_filepath(filepath: str, mimetype: Optional[str] = None) ->
 
     # Open the file in binary mode
     file = open(filepath, "rb")
-    extracted_text = extract_text_from_file(file, mimetype)
-
-    return extracted_text
+    return extract_text_from_file(file, mimetype)
 
 
 def extract_text_from_file(file: BufferedReader, mimetype: str) -> str:
     if mimetype == "application/pdf":
         # Extract text from pdf using PyPDF2
         reader = PdfReader(file)
-        extracted_text = ""
-        for page in reader.pages:
-            extracted_text += page.extract_text()
-    elif mimetype == "text/plain" or mimetype == "text/markdown":
+        extracted_text = "".join(page.extract_text() for page in reader.pages)
+    elif mimetype in {"text/plain", "text/markdown"}:
         # Read text from plain text file
         extracted_text = file.read().decode("utf-8")
     elif (
@@ -58,12 +52,9 @@ def extract_text_from_file(file: BufferedReader, mimetype: str) -> str:
         # Extract text from docx using docx2txt
         extracted_text = docx2txt.process(file)
     elif mimetype == "text/csv":
-        # Extract text from csv using csv module
-        extracted_text = ""
         decoded_buffer = (line.decode("utf-8") for line in file)
         reader = csv.reader(decoded_buffer)
-        for row in reader:
-            extracted_text += " ".join(row) + "\n"
+        extracted_text = "".join(" ".join(row) + "\n" for row in reader)
     elif (
         mimetype
         == "application/vnd.openxmlformats-officedocument.presentationml.presentation"
@@ -76,12 +67,12 @@ def extract_text_from_file(file: BufferedReader, mimetype: str) -> str:
                 if shape.has_text_frame:
                     for paragraph in shape.text_frame.paragraphs:
                         for run in paragraph.runs:
-                            extracted_text += run.text + " "
+                            extracted_text += f"{run.text} "
                     extracted_text += "\n"
     else:
         # Unsupported file type
         file.close()
-        raise ValueError("Unsupported file type: {}".format(mimetype))
+        raise ValueError(f"Unsupported file type: {mimetype}")
 
     file.close()
     return extracted_text

@@ -53,18 +53,15 @@ async def process_json_dump(
                 created_at=created_at,
                 author=author,
             )
-            print("metadata: ", str(metadata))
+            print("metadata: ", metadata)
 
             # update metadata with custom values
             for key, value in custom_metadata.items():
                 if hasattr(metadata, key):
                     setattr(metadata, key, value)
 
-            # screen for pii if requested
             if screen_for_pii:
-                pii_detected = screen_text_for_pii(text)
-                # if pii detected, print a warning and skip the document
-                if pii_detected:
+                if pii_detected := screen_text_for_pii(text):
                     print("PII detected in document, skipping")
                     skipped_items.append(item)  # add the skipped item to the list
                     continue
